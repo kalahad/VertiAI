@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VertiAI — ตั้งค่า</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI Logo" style="width:40px;height:40px;flex:none;border-radius:8px;">
+      <h1>VertiAI</h1>
+      <span class="tag" data-i18n="tagline">วิเคราะห์โครงสร้างบรรยากาศแนวดิ่ง</span>
+    </div>
+    <nav class="nav">
+      <a href="/landing" data-i18n="nav_home">หน้าแรก</a>
+      <a href="/" data-i18n="nav_dashboard">แดชบอร์ด</a>
+      <a href="/data" data-i18n="nav_data">ข้อมูล</a>
+      <a href="/settings" class="active" data-i18n="nav_settings">ตั้งค่า</a>
+    </nav>
+    <div class="spacer"></div>
+    <span class="role-badge" id="role-badge" style="display:none"></span>
+    <button class="btn ghost" id="btn-lang">EN</button>
+    <button class="btn ghost" id="btn-theme">&#127769;</button>
+  </header>
+
+  <main class="page">
+    <h2 class="page-title" data-i18n="settings_title">ตั้งค่าผู้ใช้และระบบ</h2>
+
+    <!-- บทบาท -->
+    <section class="panel">
+      <h3 data-i18n="role_section">บทบาทผู้ใช้</h3>
+      <p class="hint" data-i18n="role_section_hint">แต่ละบทบาทเน้นดัชนี (KPI) ต่างกันบนแดชบอร์ด</p>
+      <div class="role-cards" id="role-cards"></div>
+      <div style="margin-top:14px">
+        <button class="btn primary" id="btn-save-role" data-i18n="save_role">บันทึกบทบาท</button>
+        <span class="status-msg" id="role-status"></span>
+      </div>
+    </section>
+
+    <!-- หน่วยแสดงผล -->
+    <section class="panel">
+      <h3>หน่วยแสดงผล (Display Units)</h3>
+      <p class="hint">เปลี่ยนหน่วยที่ใช้แสดงผลในแดชบอร์ด Skew-T และ AI Assessment ทั้งระบบ</p>
+      <div class="unit-grid" id="unit-grid">
+        <div class="unit-row">
+          <label class="unit-label">ความเร็วลม (Wind)</label>
+          <div class="unit-opts" data-unit="wind">
+            <label class="unit-opt"><input type="radio" name="unit_wind" value="kt" checked> knots (kt)</label>
+            <label class="unit-opt"><input type="radio" name="unit_wind" value="ms"> m/s</label>
+            <label class="unit-opt"><input type="radio" name="unit_wind" value="mph"> mph</label>
+          </div>
+          <span class="unit-note">Default: kt (Wyoming/TMD)</span>
+        </div>
+        <div class="unit-row">
+          <label class="unit-label">ความสูง (Height)</label>
+          <div class="unit-opts" data-unit="height">
+            <label class="unit-opt"><input type="radio" name="unit_height" value="m" checked> เมตร (m)</label>
+            <label class="unit-opt"><input type="radio" name="unit_height" value="ft"> ฟุต (ft)</label>
+          </div>
+          <span class="unit-note">Default: m</span>
+        </div>
+        <div class="unit-row">
+          <label class="unit-label">อุณหภูมิ (Temperature)</label>
+          <div class="unit-opts" data-unit="temp">
+            <label class="unit-opt"><input type="radio" name="unit_temp" value="c" checked> Celsius (&#176;C)</label>
+            <label class="unit-opt"><input type="radio" name="unit_temp" value="f"> Fahrenheit (&#176;F)</label>
+          </div>
+          <span class="unit-note">Default: &#176;C</span>
+        </div>
+        <div class="unit-row">
+          <label class="unit-label">ความดันอากาศ (Pressure)</label>
+          <div class="unit-opts" data-unit="pressure">
+            <label class="unit-opt"><input type="radio" name="unit_pressure" value="hpa" checked> hPa</label>
+            <label class="unit-opt"><input type="radio" name="unit_pressure" value="mb"> mb (= hPa)</label>
+            <label class="unit-opt"><input type="radio" name="unit_pressure" value="inhg"> inHg</label>
+          </div>
+          <span class="unit-note">Default: hPa</span>
+        </div>
+        <div class="unit-row">
+          <label class="unit-label">พลังงาน CAPE/CIN</label>
+          <div class="unit-opts" data-unit="energy">
+            <label class="unit-opt"><input type="radio" name="unit_energy" value="jkg" checked> J/kg</label>
+            <label class="unit-opt"><input type="radio" name="unit_energy" value="kj"> kJ/kg</label>
+          </div>
+          <span class="unit-note">Default: J/kg</span>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn primary" id="btn-save-units">บันทึกหน่วย</button>
+        <button class="btn" id="btn-reset-units" style="margin-left:8px">รีเซ็ตเป็นค่าเริ่มต้น</button>
+        <span class="status-msg" id="unit-status"></span>
+      </div>
+    </section>
+
+    <!-- เกณฑ์เฉพาะถิ่น -->
+    <section class="panel">
+      <h3 data-i18n="threshold_section">เกณฑ์เฉพาะถิ่น</h3>
+      <p class="hint" data-i18n="threshold_hint">ปรับเกณฑ์รายภูมิภาคสำหรับการประเมินฝนหลวงเฉพาะพื้นที่ บันทึกลงฐานข้อมูล</p>
+      <div id="threshold-box"></div>
+    </section>
+  </main>
+
+  <footer class="vai-footer">
+    <div class="vai-footer-inner">
+      <div class="vai-footer-brand">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI" style="width:32px;height:32px;">
+        <div>
+          <span class="vai-footer-title">VertiAI v1.00</span>
+          <span class="vai-footer-sub">Vertical Atmospheric Intelligence</span>
+        </div>
+      </div>
+      <div class="vai-footer-info">
+        <span>ผศ.ดร.กุลวลัญช์ วรุณสิน</span>
+        <span class="vai-footer-sep">·</span>
+        <span>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยรามคำแหง</span>
+        <span class="vai-footer-sep">·</span>
+        <span>© 2026</span>
+      </div>
+      <div class="vai-footer-links">
+        <span style="font-size:11px;color:var(--text-soft)">ข้อมูล: Wyoming Archive · TMD</span>
+      </div>
+    </div>
+  </footer>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+</body>
+</html>

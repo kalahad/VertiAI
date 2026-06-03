@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VertiAI — วิเคราะห์บรรยากาศแนวดิ่ง</title>
+  <link rel="preconnect" href="https://cdn.plot.ly">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI Logo" style="width:40px;height:40px;flex:none;border-radius:8px;">
+      <h1>VertiAI</h1>
+      <span class="tag" data-i18n="tagline">วิเคราะห์โครงสร้างบรรยากาศแนวดิ่ง</span>
+    </div>
+    <nav class="nav">
+      <a href="/landing" data-i18n="nav_home">หน้าแรก</a>
+      <a href="/" class="active" data-i18n="nav_dashboard">แดชบอร์ด</a>
+      <a href="/data" data-i18n="nav_data">ข้อมูล</a>
+      <a href="/settings" data-i18n="nav_settings">ตั้งค่า</a>
+    </nav>
+    <div class="controls">
+      <label data-i18n="station">สถานี</label>
+      <select id="sel-station"></select>
+      <label data-i18n="date">วันที่</label>
+      <input type="date" id="sel-date">
+      <label data-i18n="hour">เวลา (UTC)</label>
+      <select id="sel-hour">
+        <option value="0">00Z</option>
+        <option value="12">12Z</option>
+      </select>
+      <label data-i18n="region">พื้นที่</label>
+      <select id="sel-region">
+        <option value="">—</option>
+        <option value="tung_kula">ทุ่งกุลาร้องไห้</option>
+        <option value="bang_lang">เขื่อนบางลาง</option>
+        <option value="korat">นครราชสีมา</option>
+        <option value="sa_kaeo">สระแก้ว</option>
+        <option value="to_daeng">ป่าพรุโต๊ะแดง</option>
+      </select>
+      <button class="btn" id="btn-analyze" data-i18n="analyze">วิเคราะห์</button>
+    </div>
+    <div class="spacer"></div>
+    <span class="role-badge" id="role-badge" style="display:none"></span>
+    <span class="status" id="status"></span>
+    <button class="btn ghost" id="btn-lang">EN</button>
+    <button class="btn ghost" id="btn-theme">🌙</button>
+  </header>
+
+  <!-- Quick-nav -->
+  <div class="quick-nav" id="quick-nav" style="display:none">
+    <span class="quick-nav-label">ไปยัง :</span>
+    <button class="qnav-btn" data-target="zone-skewt">&#9660; Skew-T</button>
+    <button class="qnav-btn" data-target="zone-kpi-hodo">&#9660; KPI Strip</button>
+    <button class="qnav-btn" data-target="zone-ai">&#9660; AI Panel</button>
+    <button class="qnav-btn" data-target="zone-atmo">&#9660; บรรยากาศ 5 ระดับ</button>
+    <button class="qnav-btn" data-target="zone-ops">&#9660; Operation Dashboard</button>
+  </div>
+
+  <div class="errbar" id="errbar" style="display:none">
+    <span class="errbar-msg" id="errbar-msg"></span>
+    <span class="errbar-actions">
+      <button class="btn ghost" id="btn-retry" data-i18n="retry">ลองใหม่</button>
+      <a class="btn ghost" href="/data" id="btn-goupload" data-i18n="err_goupload">อัปโหลดไฟล์แทน</a>
+    </span>
+  </div>
+
+  <main class="layout" id="layout">
+
+    <!-- Row 1 Col 1: Skew-T + Legend -->
+    <section class="card zone-skewt" id="zone-skewt">
+      <h2 data-i18n="skewt_title">Skew-T Log-P (เชิงโต้ตอบ)</h2>
+      <div id="skewt"></div>
+      <div id="skewt-legend-content"
+           style="border-top:1px solid var(--border);padding-top:12px;margin-top:10px"></div>
+    </section>
+
+    <!-- Row 1 Col 2: KPI Strip + Hodograph -->
+    <section class="card" id="zone-kpi-hodo">
+      <h2 data-i18n="kpi_title">ดัชนีเสถียรภาพ (ตามเกณฑ์ฝนหลวง)</h2>
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <h2 style="margin-top:14px" data-i18n="hodo_title">Hodograph (เวกเตอร์ลมตามระดับ)</h2>
+      <div id="hodo"></div>
+    </section>
+
+    <!-- Row 2 Full: Role panel (farmer/tourist/factory/general/rainmaking) -->
+    <!-- อยู่ก่อน zone-atmo แต่หลัง Skew-T+KPI -->
+    <div id="zone-role" style="display:none; grid-column:1/-1"></div>
+
+    <!-- Row 3 Col 1: บรรยากาศแนวดิ่ง 5 ระดับ -->
+    <section class="card" id="zone-atmo">
+      <h2>คำอธิบายบรรยากาศแนวดิ่ง 5 ระดับ</h2>
+      <div class="atmo-layers" id="atmo-layers"></div>
+    </section>
+
+    <!-- Row 3 Col 2: AI Panel -->
+    <section class="card" id="zone-ai">
+      <h2 data-i18n="ai_title">AI ประเมินโอกาสฝน + เทคนิคฝนหลวง</h2>
+      <div class="ai-head">
+        <div id="gauge"></div>
+        <div>
+          <div class="ai-level" id="ai-level">—</div>
+          <div class="ai-summary" id="ai-summary" data-i18n="ai_wait">กดปุ่ม "วิเคราะห์" เพื่อเริ่ม</div>
+        </div>
+      </div>
+      <div class="reasons" id="reasons"></div>
+      <div class="rainmaking" id="rainmaking" style="display:none"></div>
+    </section>
+
+    <!-- Row 4 Full: Operation Dashboard -->
+    <div id="zone-ops"></div>
+
+    <div class="empty-overlay" id="empty-overlay" data-i18n="empty_hint">
+      เลือกสถานี วันที่ และเวลา แล้วกด "วิเคราะห์" เพื่อแสดงผล
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <footer class="vai-footer">
+    <div class="vai-footer-inner">
+      <div class="vai-footer-brand">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI" style="width:32px;height:32px;">
+        <div>
+          <span class="vai-footer-title">VertiAI v1.00</span>
+          <span class="vai-footer-sub">Vertical Atmospheric Intelligence</span>
+        </div>
+      </div>
+      <div class="vai-footer-info">
+        <span>ผศ.ดร.กุลวลัญช์ วรุณสิน</span>
+        <span class="vai-footer-sep">·</span>
+        <span>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยรามคำแหง</span>
+        <span class="vai-footer-sep">·</span>
+        <span>© 2026</span>
+      </div>
+      <div class="vai-footer-links">
+        <span style="font-size:11px;color:var(--text-soft)">ข้อมูล: Wyoming Archive · TMD</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/skewt.js') }}"></script>
+
+  <script>
+    document.querySelectorAll('.qnav-btn[data-target]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var targetId   = btn.getAttribute('data-target');
+        var fallbackId = btn.getAttribute('data-fallback');
+        var target     = document.getElementById(targetId)
+                      || (fallbackId && document.getElementById(fallbackId));
+        if (!target || target.style.display === 'none') {
+          // ถ้า section ถูกซ่อน ลอง fallback
+          target = (fallbackId && document.getElementById(fallbackId)) || target;
+          if (!target || target.style.display === 'none') return;
+        }
+        var topbarH = (document.getElementById('topbar')    || {offsetHeight:64}).offsetHeight;
+        var qnavH   = (document.getElementById('quick-nav') || {offsetHeight:36}).offsetHeight;
+        var top     = target.getBoundingClientRect().top + window.scrollY - topbarH - qnavH - 8;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+        document.querySelectorAll('.qnav-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

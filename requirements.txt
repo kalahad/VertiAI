@@ -1,0 +1,9 @@
+# VertiAI — Python dependencies
+# Local dev: Python 3.14 | Railway: Python 3.11 (via runtime.txt)
+flask>=3.0
+metpy>=1.7
+pandas>=2.2
+numpy>=1.24        # ไม่ pin upper เพื่อรองรับ Python 3.14
+beautifulsoup4>=4.12
+requests>=2.31
+gunicorn>=21.2     # Railway production WSGI server

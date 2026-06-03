@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VertiAI — สนับสนุนภารกิจฝนหลวงด้วย AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI Logo" style="width:40px;height:40px;flex:none;">
+      <h1>VertiAI</h1>
+      <span class="tag" data-i18n="tagline">วิเคราะห์โครงสร้างบรรยากาศแนวดิ่ง</span>
+    </div>
+    <nav class="nav">
+      <a href="/landing" class="active" data-i18n="nav_home">หน้าแรก</a>
+      <a href="/" data-i18n="nav_dashboard">แดชบอร์ด</a>
+      <a href="/data" data-i18n="nav_data">ข้อมูล</a>
+      <a href="/settings" data-i18n="nav_settings">ตั้งค่า</a>
+    </nav>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="btn-lang">EN</button>
+    <button class="btn ghost" id="btn-theme">🌙</button>
+  </header>
+
+  <section class="hero">
+    <h1 data-i18n="landing_hero">เข้าใจฟ้า ก่อนฝนจะมา</h1>
+    <p data-i18n="landing_sub">VertiAI วิเคราะห์โครงสร้างบรรยากาศแนวดิ่งด้วย MetPy + AI เชิงกฎ เพื่อสนับสนุนภารกิจฝนหลวงและการพยากรณ์ฝน</p>
+    <div class="cta">
+      <a class="btn primary" href="/" data-i18n="landing_enter">เข้าสู่แดชบอร์ด</a>
+      <a class="btn" href="/data" data-i18n="landing_data_btn">จัดการข้อมูล</a>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature">
+      <h3 data-i18n="feat1_t">Skew-T เชิงโต้ตอบ</h3>
+      <p data-i18n="feat1_d">กราฟ Skew-T Log-P + Hodograph คำนวณจาก MetPy ถูกต้องเชิงวิชาการ ไฮไลต์ชั้นผกผันอัตโนมัติ</p>
+    </div>
+    <div class="feature">
+      <h3 data-i18n="feat2_t">AI ประเมินโอกาสฝน</h3>
+      <p data-i18n="feat2_d">ประเมินโอกาสฝนและเทคนิคฝนหลวงแบบอธิบายเหตุผลได้ ไม่ใช่กล่องดำ พร้อมเกณฑ์เฉพาะถิ่น</p>
+    </div>
+    <div class="feature">
+      <h3 data-i18n="feat3_t">เกณฑ์เฉพาะถิ่น</h3>
+      <p data-i18n="feat3_d">ปรับเกณฑ์รายภูมิภาค (อีสาน/ตะวันออก/ใต้) และมุมมอง KPI ตามบทบาทผู้ใช้</p>
+    </div>
+  </section>
+
+  <section class="mission">
+    <h3 data-i18n="mission_title">พันธกิจฝนหลวง</h3>
+    <p data-i18n="mission_text">สนับสนุนการตัดสินใจปฏิบัติการฝนหลวงด้วยข้อมูลบรรยากาศแนวดิ่งที่แม่นยำ ลดความเสี่ยงภัยแล้ง และเติมน้ำต้นทุนให้เขื่อนอย่างมีหลักการ</p>
+  </section>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await window.VAI.boot();
+      document.getElementById("btn-lang").addEventListener("click", () => window.VAI.toggleLang());
+      document.getElementById("btn-theme").addEventListener("click", () => window.VAI.toggleTheme());
+    });
+  </script>
+
+  <!-- ===== Footer ===== -->
+  <footer class="vai-footer">
+    <div class="vai-footer-inner">
+      <div class="vai-footer-brand">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI" style="width:32px;height:32px;">
+        <div>
+          <span class="vai-footer-title">VertiAI v1.00</span>
+          <span class="vai-footer-sub">Vertical Atmospheric Intelligence</span>
+        </div>
+      </div>
+      <div class="vai-footer-info">
+        <span>ผศ.ดร.กุลวลัญช์ วรุณสิน</span>
+        <span class="vai-footer-sep">·</span>
+        <span>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยรามคำแหง</span>
+        <span class="vai-footer-sep">·</span>
+        <span>© 2026</span>
+      </div>
+      <div class="vai-footer-links">
+        <span style="font-size:11px;color:var(--text-soft)">ข้อมูล: Wyoming Archive · TMD</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

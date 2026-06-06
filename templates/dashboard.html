@@ -44,6 +44,7 @@
     </div>
     <div class="spacer"></div>
     <span class="role-badge" id="role-badge" style="display:none"></span>
+    <span class="data-badge" id="data-badge" style="display:none"></span>
     <span class="status" id="status"></span>
     <button class="btn ghost" id="btn-lang">EN</button>
     <button class="btn ghost" id="btn-theme">🌙</button>
@@ -53,7 +54,7 @@
   <div class="quick-nav" id="quick-nav" style="display:none">
     <span class="quick-nav-label">ไปยัง :</span>
     <button class="qnav-btn" data-target="zone-skewt">&#9660; Skew-T</button>
-    <button class="qnav-btn" data-target="zone-kpi-hodo">&#9660; KPI Strip</button>
+    <button class="qnav-btn" data-target="zone-role">&#9660; KPI Strip</button>
     <button class="qnav-btn" data-target="zone-ai">&#9660; AI Panel</button>
     <button class="qnav-btn" data-target="zone-atmo">&#9660; บรรยากาศ 5 ระดับ</button>
     <button class="qnav-btn" data-target="zone-ops">&#9660; Operation Dashboard</button>
@@ -85,11 +86,7 @@
       <div id="hodo"></div>
     </section>
 
-    <!-- Row 2 Full: Role panel (farmer/tourist/factory/general/rainmaking) -->
-    <!-- อยู่ก่อน zone-atmo แต่หลัง Skew-T+KPI -->
-    <div id="zone-role" style="display:none; grid-column:1/-1"></div>
-
-    <!-- Row 3 Col 1: บรรยากาศแนวดิ่ง 5 ระดับ -->
+    <!-- Row 2 Col 1: บรรยากาศแนวดิ่ง 5 ระดับ -->
     <section class="card" id="zone-atmo">
       <h2>คำอธิบายบรรยากาศแนวดิ่ง 5 ระดับ</h2>
       <div class="atmo-layers" id="atmo-layers"></div>
@@ -111,6 +108,9 @@
 
     <!-- Row 4 Full: Operation Dashboard -->
     <div id="zone-ops"></div>
+
+    <!-- Row 5 Full: Role KPI Strip (ล่างสุดก่อน footer) -->
+    <div id="zone-role" style="display:none; grid-column:1/-1"></div>
 
     <div class="empty-overlay" id="empty-overlay" data-i18n="empty_hint">
       เลือกสถานี วันที่ และเวลา แล้วกด "วิเคราะห์" เพื่อแสดงผล

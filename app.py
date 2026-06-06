@@ -189,6 +189,7 @@ def api_sounding():
         if region and out.get("indices"):
             override = db.get_region_threshold(region)
             out["regional"] = ai.apply_regional(out["indices"], region, override=override)
+        out["_meta"] = {"station": station, "date": date, "hour": hour_i}
         _log_perf("/api/sounding", station, out["elapsed_ms"], cached=True)
         try: db.save_last_upload(out)
         except Exception: pass
@@ -208,6 +209,7 @@ def api_sounding():
     db.save_cache(station, key, dl["table_text"], result)
     result["cached"] = False
     result["elapsed_ms"] = int((time.time() - t0) * 1000)
+    result["_meta"] = {"station": station, "date": date, "hour": hour_i}
     _log_perf("/api/sounding", station, result["elapsed_ms"], cached=False)
     try: db.save_last_upload(result)
     except Exception: pass

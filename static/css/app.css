@@ -100,6 +100,17 @@ select, input[type="date"] {
 .qnav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .qnav-spacer { flex: 1; }
 
+/* ---------- Data Badge (แสดงข้อมูลที่กำลังวิเคราะห์) ---------- */
+.data-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  color: var(--text-soft);
+  background: var(--panel-2, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
 /* ---------- โครง Layout (Session 9 — 2×2 + stretch row heights) ---------- */
 .layout {
   display: grid;

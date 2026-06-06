@@ -99,6 +99,26 @@ async function analyze() {
 // ============================================================
 // วาดผลทั้งหมด
 // ============================================================
+// ---------- Data Badge ----------
+function updateDataBadge(d) {
+  const badge = document.getElementById("data-badge");
+  if (!badge) return;
+  const meta = d._meta || {};
+  const station = meta.station || "";
+  const date    = meta.date    || "";
+  const hour    = meta.hour    != null ? (parseInt(meta.hour) === 0 ? "00Z" : parseInt(meta.hour) === 12 ? "12Z" : meta.hour + "Z") : "";
+  if (!station && !date) { badge.style.display = "none"; return; }
+  let dateStr = date;
+  if (date) {
+    try {
+      const dt = new Date(date + "T00:00:00");
+      dateStr = dt.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+    } catch(e) {}
+  }
+  badge.textContent = [station, dateStr, hour].filter(Boolean).join(" · ");
+  badge.style.display = "inline-block";
+}
+
 function render(d) {
   drawSkewT(d);
   drawHodograph(d);
@@ -108,6 +128,7 @@ function render(d) {
   drawLegend(d);
   drawRoleWidget(d);
   drawOperationDashboard(d);
+  updateDataBadge(d);
 }
 
 // ---------- Skew-T ----------

@@ -100,11 +100,22 @@ async function analyze() {
 // วาดผลทั้งหมด
 // ============================================================
 // ---------- Data Badge ----------
+function stationLabelFromMeta(stationId) {
+  // หาชื่อสถานีจาก <option> ใน dropdown ตามรหัสที่อยู่ใน _meta จริง ๆ
+  // (ไม่ใช่ตัวเลือกที่ถูกเลือกอยู่ในขณะนี้ — กันปัญหา badge ไม่ sync กับข้อมูลที่แสดง)
+  if (!stationId) return "";
+  const stEl = document.getElementById("sel-station");
+  if (stEl) {
+    const opt = Array.from(stEl.options).find(o => o.value === stationId);
+    if (opt && opt.textContent) return opt.textContent;
+  }
+  return stationId;
+}
 function updateDataBadge(d) {
   const badge = document.getElementById("data-badge");
   if (!badge) return;
   const meta = d._meta || {};
-  const station = meta.station || "";
+  const station = stationLabelFromMeta(meta.station || "");
   const date    = meta.date    || "";
   const hour    = meta.hour    != null ? (parseInt(meta.hour) === 0 ? "00Z" : parseInt(meta.hour) === 12 ? "12Z" : meta.hour + "Z") : "";
   if (!station && !date) { badge.style.display = "none"; return; }
@@ -695,6 +706,21 @@ async function tryLastUpload(showToastOnFail, showWarnBar) {
       return false;
     }
     DATA = j; DATA._source = "upload";
+    // sync ฟอร์มเลือกสถานี/วันที่/เวลา ให้ตรงกับข้อมูลที่ auto-restore มาแสดงจริง
+    // (กันปัญหา dropdown ค้างค่า default ขณะที่ badge/กราฟแสดงผลของอีกสถานีหนึ่ง)
+    const meta = j._meta || {};
+    if (meta.station) {
+      const stEl = document.getElementById("sel-station");
+      if (stEl && stEl.querySelector(`option[value="${meta.station}"]`)) stEl.value = meta.station;
+    }
+    if (meta.date) {
+      const dEl = document.getElementById("sel-date");
+      if (dEl) dEl.value = meta.date;
+    }
+    if (meta.hour != null) {
+      const hEl = document.getElementById("sel-hour");
+      if (hEl && hEl.querySelector(`option[value="${meta.hour}"]`)) hEl.value = String(meta.hour);
+    }
     hideEmpty(); render(j);
     setStatus("แสดงข้อมูลจาก Upload ล่าสุด");
     setLoading(false);

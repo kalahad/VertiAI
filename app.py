@@ -43,6 +43,33 @@ def _log_perf(endpoint, station, elapsed_ms, cached):
 # เริ่มฐานข้อมูลตอนสตาร์ท
 db.init_db()
 
+
+# ==================== Security headers / Content-Security-Policy ====================
+# Plotly.js (cdn.plot.ly) ต้องใช้ 'unsafe-eval' (สร้างฟังก์ชันด้วย new Function สำหรับ d3-format)
+# และเทมเพลตมี inline <script>/onclick + inline style จึงต้องอนุญาต 'unsafe-inline'
+# หมายเหตุด้านความปลอดภัย: ขั้นต่อไปควรย้ายไปใช้ nonce-based CSP เพื่อตัด 'unsafe-inline' ออก
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plot.ly; "
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: blob:; "
+    "connect-src 'self'; "
+    "font-src 'self'; "
+    "worker-src 'self' blob:; "
+    "base-uri 'self'; "
+    "object-src 'none'; "
+    "frame-ancestors 'self'"
+)
+
+
+@app.after_request
+def _set_security_headers(resp):
+    resp.headers.setdefault("Content-Security-Policy", _CSP)
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return resp
+
 # ==================== ค่าคงที่ / รายชื่อสถานี ====================
 STATIONS = [
     {"id": "48453", "name": "กรุงเทพฯ (บางนา)", "name_en": "Bangkok"},
@@ -52,7 +79,7 @@ STATIONS = [
 ]
 VALID_STATIONS = {s["id"] for s in STATIONS}
 VALID_ROLES = {"rainmaking", "meteorologist", "researcher", "farmer",
-               "factory", "tourist", "general"}
+               "factory", "tourist", "general", "pilot"}
 
 # region ที่อนุญาตให้ปรับเกณฑ์ในหน้า Settings (ตรงกับ REGIONAL_THRESHOLDS)
 VALID_REGIONS = set(ai.REGIONAL_THRESHOLDS.keys())
@@ -348,6 +375,7 @@ ROLE_KPI_FOCUS = {
     "farmer":        ["CAPE", "PWAT", "K_INDEX"],
     "factory":       ["PWAT", "K_INDEX", "LCL_p"],        # มลพิษ/Mixing Layer/ฝน
     "tourist":       ["CAPE", "PWAT", "K_INDEX", "LI"],   # สภาพอากาศทั่วไป
+    "pilot":         ["CAPE", "K_INDEX", "FREEZING_0C", "EL_p", "LCL_p"],  # convection/icing/ceiling
     "general":       ["CAPE", "PWAT", "K_INDEX"],          # ประชาชนทั่วไป
 }
 ROLE_LABELS = {
@@ -357,10 +385,11 @@ ROLE_LABELS = {
     "farmer":        {"th": "เกษตรกร", "en": "Farmer"},
     "factory":       {"th": "โรงงานอุตสาหกรรม", "en": "Factory"},
     "tourist":       {"th": "นักท่องเที่ยว", "en": "Tourist"},
+    "pilot":         {"th": "นักบิน / การบิน", "en": "Pilot / Aviation"},
     "general":       {"th": "ประชาชนทั่วไป", "en": "General Public"},
 }
 ROLE_ORDER = ["rainmaking", "meteorologist", "researcher", "farmer",
-              "factory", "tourist", "general"]
+              "factory", "tourist", "pilot", "general"]
 
 
 @app.get("/api/roles")

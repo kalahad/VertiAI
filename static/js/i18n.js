@@ -59,3 +59,42 @@ window.VAI = (function () {
   }
   return { load, t, apply, setLang, toggleLang, getLang, initTheme, toggleTheme, boot };
 })();
+
+
+/* ─── Mobile nav toggle (hamburger) — จุดงานค้าง #1 ───
+   ฉีดปุ่ม ☰ เข้า .topbar ทุกหน้า (ใช้ i18n.js ร่วมกัน) แล้วสลับ .nav-open
+   ทำงานเฉพาะจอ <=768px ตาม CSS; ปิดเมนูเมื่อคลิกลิงก์/นอกเมนู/ขยายจอ */
+document.addEventListener("DOMContentLoaded", function () {
+  var bar = document.querySelector(".topbar");
+  var nav = bar && bar.querySelector(".nav");
+  if (!bar || !nav || bar.querySelector(".nav-toggle")) return;
+
+  var btn = document.createElement("button");
+  btn.className = "nav-toggle";
+  btn.id = "nav-toggle";
+  btn.type = "button";
+  btn.setAttribute("aria-label", "เมนูนำทาง");
+  btn.setAttribute("aria-expanded", "false");
+  btn.innerHTML = "\u2630"; // ☰
+
+  var lang = document.getElementById("btn-lang");
+  if (lang) bar.insertBefore(btn, lang); else bar.appendChild(btn);
+
+  function setOpen(open) {
+    bar.classList.toggle("nav-open", open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  btn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    setOpen(!bar.classList.contains("nav-open"));
+  });
+  nav.addEventListener("click", function (e) {
+    if (e.target.tagName === "A") setOpen(false);
+  });
+  document.addEventListener("click", function (e) {
+    if (bar.classList.contains("nav-open") && !bar.contains(e.target)) setOpen(false);
+  });
+  window.addEventListener("resize", function () {
+    if (window.innerWidth > 768) setOpen(false);
+  });
+});

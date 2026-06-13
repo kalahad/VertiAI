@@ -4,8 +4,8 @@ VertiAI — Sounding Interpreter (Session 10)
 Rule-based role-specific report engine สำหรับ AI Panel
 ไม่เรียก AI API ภายนอก — ใช้ composite rules จาก indices ที่คำนวณแล้ว
 
-รองรับ 7 บทบาท: rainmaking, meteorologist, researcher,
-                farmer, factory, tourist, general
+รองรับ 8 บทบาท: rainmaking, meteorologist, researcher,
+                farmer, factory, tourist, pilot, general
 
 คืน RoleReport dict สำหรับแต่ละบทบาท:
 {
@@ -635,6 +635,104 @@ def _report_general(idx, ai_result, rm_result):
 
 
 # ─────────────────────────────────────────────────────────────
+# Template 8: นักบิน / การบิน (pilot)
+# มุมมองความปลอดภัยการบิน: convection/CB, turbulence/shear,
+# icing (ระดับเยือกแข็ง), ceiling/cloud tops, ลมพื้นผิว
+# ─────────────────────────────────────────────────────────────
+
+def _report_pilot(idx, ai_result, rm_result):
+    score = ai_result.get("score", 0)
+    cape  = idx.get("CAPE")
+    ki    = idx.get("K_INDEX")
+    li    = idx.get("LI")
+    lcl   = idx.get("LCL_p")
+    el    = idx.get("EL_p")
+    f0    = idx.get("FREEZING_0C")
+    shear = idx.get("SHEAR_SFC6KM_KT")
+    ws    = idx.get("SURFACE_WIND_KT") or idx.get("WS_repr")
+    pwat  = idx.get("PWAT")
+
+    # ระดับอันตรายการบิน: convection มาก = อันตรายมาก (ตรงข้ามกับฝนหลวง)
+    hazard = "bad" if score >= 60 else ("warn" if score >= 35 else "good")
+    hazard_word = {"bad": "สูง", "warn": "ปานกลาง", "good": "ต่ำ"}[hazard]
+
+    # ─ Convective hazard (CB / thunderstorm)
+    convection = [
+        f"ศักยภาพ Convection/CB: {hazard_word} (AI Score {score}/100)",
+        _cape_text(cape),
+        _ki_text(ki),
+        _li_text(li),
+    ]
+    if el:
+        convection.append(f"ยอดเมฆโดยประมาณ (EL): {el:.0f} hPa — ใช้ประเมินเพดาน CB tops")
+
+    # ─ Turbulence & Wind Shear
+    turbulence = []
+    if shear is not None:
+        turbulence.append(f"Wind Shear (SFC–6km): {shear:.0f} kt")
+        if shear >= 40:
+            turbulence.append("→ เสี่ยง Low-Level Wind Shear (LLWS) รุนแรง ระวังช่วง Approach/Departure")
+        elif shear >= 20:
+            turbulence.append("→ Wind Shear ปานกลาง อาจมี Turbulence ในชั้นล่าง")
+        else:
+            turbulence.append("→ Wind Shear ต่ำ สภาพการบินชั้นล่างค่อนข้างนิ่ง")
+    else:
+        turbulence.append("ไม่มีข้อมูล Wind Shear")
+    if cape is not None and cape > 1500:
+        turbulence.append("CAPE สูง — คาดมี Convective Turbulence ใกล้/ใต้ CB")
+
+    # ─ Icing (ระดับเยือกแข็ง + ความชื้น)
+    icing = []
+    if f0:
+        icing.append(_freezing_text(f0, "0°C"))
+        h = f0.get("height_m")
+        if h:
+            icing.append(f"ชั้นเสี่ยงน้ำแข็งเกาะ (Airframe Icing) ประมาณ 0°C ถึง −20°C เหนือ {h:.0f} m หากบินในเมฆ")
+    else:
+        icing.append("ไม่พบระดับเยือกแข็ง — ประเมินความเสี่ยงน้ำแข็งเกาะไม่ได้")
+    if pwat is not None and pwat >= 40:
+        icing.append(_pwat_text(pwat) + " — เมฆหนา เพิ่มโอกาส Icing ในชั้นเย็น")
+
+    # ─ Ceiling & Surface wind
+    ceiling = []
+    if lcl:
+        ceiling.append(f"ฐานเมฆโดยประมาณ (LCL): {lcl:.0f} hPa — ใช้ประเมินเพดานบิน (Ceiling)")
+    if ws is not None:
+        ceiling.append(f"ลมพื้นผิว: {ws:.0f} kt — {'ระวัง Crosswind ขณะ Take-off/Landing' if ws >= 15 else 'ลมพื้นผิวอยู่ในเกณฑ์ปกติ'}")
+
+    actions = [
+        "ตรวจสอบ METAR/TAF และ SIGMET/AIRMET ของสนามบินต้นทาง–ปลายทางก่อนบิน",
+        "วางแผนเส้นทางเลี่ยง CB cells และเผื่อเชื้อเพลิงสำรอง (Alternate/Holding)",
+    ]
+    if hazard == "bad":
+        actions.append("พิจารณาเลื่อน/ปรับเวลาเที่ยวบินหากเส้นทางตัดผ่านแนวพายุ")
+
+    cautions = []
+    if score >= 60:
+        cautions.append("ศักยภาพพายุฝนฟ้าคะนองสูง — เสี่ยง CB, ฟ้าผ่า, ลมเฉือนแรง และ Microburst")
+    if shear is not None and shear >= 40:
+        cautions.append("Wind Shear รุนแรง — ระวัง LLWS ในขั้น Approach/Departure")
+    if f0 and pwat is not None and pwat >= 40:
+        cautions.append("เสี่ยง Airframe Icing เมื่อบินในเมฆเหนือระดับเยือกแข็ง")
+
+    return {
+        "role": "pilot",
+        "role_label_th": "นักบิน / การบิน",
+        "headline": f"ประเมินความปลอดภัยการบิน — ระดับอันตรายจากสภาพอากาศ: {hazard_word} (AI Score {score}/100)",
+        "level": hazard,
+        "sections": [
+            {"title": "อันตรายจาก Convection / CB", "items": convection, "level": hazard},
+            {"title": "Turbulence และ Wind Shear",   "items": turbulence, "level": _lvl3(shear, 40, 20) if shear is not None else "neutral"},
+            {"title": "ความเสี่ยงน้ำแข็งเกาะ (Icing)", "items": icing,      "level": "neutral"},
+            {"title": "เพดานบินและลมพื้นผิว",          "items": ceiling,    "level": "neutral"},
+        ],
+        "action_items": actions,
+        "cautions": cautions,
+        "metadata": {"score": score, "timestamp": datetime.utcnow().isoformat()},
+    }
+
+
+# ─────────────────────────────────────────────────────────────
 # Entry point หลัก
 # ─────────────────────────────────────────────────────────────
 
@@ -645,6 +743,7 @@ _REPORT_FN = {
     "farmer":        _report_farmer,
     "tourist":       _report_tourist,
     "factory":       _report_factory,
+    "pilot":         _report_pilot,
     "general":       _report_general,
 }
 

@@ -1162,7 +1162,7 @@ function applyRoleLayout(role) {
   const qnav    = document.getElementById("quick-nav");
   if (!skewt) return;
   const simpleRoles = ["farmer", "general", "tourist", "factory"];
-  const proRoles    = ["rainmaking", "meteorologist", "researcher"];
+  const proRoles    = ["rainmaking", "meteorologist", "researcher", "pilot"];
   if (simpleRoles.includes(role)) {
     skewt.style.display = "none"; kpiHodo.style.display = "none";
     if (aiPanel) aiPanel.style.display = "none";

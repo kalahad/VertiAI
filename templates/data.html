@@ -31,18 +31,18 @@
       <p class="hint" data-i18n="upload_hint">รองรับไฟล์ HTML/text-list จาก TMD หรือ Wyoming</p>
       <div class="row">
         <div class="field">
-          <label data-i18n="upload_choose">เลือกไฟล์</label>
+          <label for="up-file" data-i18n="upload_choose">เลือกไฟล์</label>
           <input type="file" id="up-file" accept=".html,.htm,.txt,.text">
         </div>
         <div class="field">
-          <label data-i18n="region">พื้นที่</label>
+          <label for="up-region" data-i18n="region">พื้นที่</label>
           <select id="up-region">
             <option value="">—</option>
           </select>
         </div>
       </div>
       <div class="field" style="margin-top:12px">
-        <label data-i18n="upload_or">หรือวางข้อความ text-list</label>
+        <label for="up-text" data-i18n="upload_or">หรือวางข้อความ text-list</label>
         <textarea id="up-text" data-i18n-ph="upload_paste_ph" placeholder="วางตาราง sounding (text-list) ที่นี่..."></textarea>
       </div>
       <div style="margin-top:12px">
@@ -58,11 +58,11 @@
       <p class="hint" data-i18n="history_hint">เลือกสถานีและปี (รองรับ พ.ศ. 2563-2567 หรือ ค.ศ. 2020-2024)</p>
       <div class="row">
         <div class="field">
-          <label data-i18n="station">สถานี</label>
+          <label for="h-station" data-i18n="station">สถานี</label>
           <select id="h-station"><option value="" data-i18n="all">ทั้งหมด</option></select>
         </div>
         <div class="field">
-          <label data-i18n="year">ปี</label>
+          <label for="h-year" data-i18n="year">ปี</label>
           <select id="h-year"><option value="" data-i18n="all">ทั้งหมด</option></select>
         </div>
         <button class="btn" id="btn-history" data-i18n="query">ค้นหา</button>

@@ -33,16 +33,16 @@
   <!-- ═══ CTRL-BAR — station/date/time/region controls + status ═══ -->
   <div class="ctrl-bar" id="ctrl-bar">
     <div class="ctrl-bar-inner">
-      <label data-i18n="station">สถานี</label>
+      <label for="sel-station" data-i18n="station">สถานี</label>
       <select id="sel-station"></select>
-      <label data-i18n="date">วันที่</label>
+      <label for="sel-date" data-i18n="date">วันที่</label>
       <input type="date" id="sel-date">
-      <label data-i18n="hour">เวลา (UTC)</label>
+      <label for="sel-hour" data-i18n="hour">เวลา (UTC)</label>
       <select id="sel-hour">
         <option value="0">00Z</option>
         <option value="12">12Z</option>
       </select>
-      <label data-i18n="region">พื้นที่</label>
+      <label for="sel-region" data-i18n="region">พื้นที่</label>
       <select id="sel-region">
         <option value="">—</option>
         <option value="tung_kula">ทุ่งกุลาร้องไห้</option>

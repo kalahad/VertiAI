@@ -20,6 +20,7 @@ from flask import Flask, request, jsonify, session, render_template
 from core import sounding as snd
 from core import ai_rules as ai
 from core import db
+from core import sounding_interpreter as interp
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.environ.get('VERTIAI_SECRET', 'vertiai-dev-key-2026')  # คงที่ข้ามรอบ restart
@@ -424,6 +425,34 @@ def api_save_thresholds():
 
     db.save_region_threshold(region, cleaned)
     return jsonify({"ok": True, "region": region, "saved": cleaned})
+
+
+@app.get("/api/role_report")
+def api_role_report():
+    """
+    GET /api/role_report?role=<role>
+    สร้างรายงานเฉพาะกลุ่มจากข้อมูล last_upload/last_analysis
+    ไม่ต้องดึงข้อมูลใหม่ — ใช้ผลที่ cache ไว้แล้ว (FR-AI-Panel)
+    คืน RoleReport dict รวม sections / action_items / cautions
+    """
+    role = (request.args.get("role") or "").strip().lower()
+    if not role:
+        role = session.get("role") or "rainmaking"
+    if role not in VALID_ROLES:
+        return _bad(f"role ไม่ถูกต้อง (เลือก: {', '.join(sorted(VALID_ROLES))})")
+
+    # ดึงข้อมูลล่าสุดจาก DB
+    result = db.get_last_upload()
+    if not result:
+        return _bad("ยังไม่มีข้อมูลที่วิเคราะห์ไว้ — กด วิเคราะห์ ก่อน", code=404)
+
+    indices  = result.get("indices") or {}
+    ai_r     = result.get("ai")        or ai.assess_rain_chance(indices)
+    rm_r     = result.get("rainmaking") or ai.assess_rainmaking(indices)
+
+    report = interp.generate_role_report(indices, ai_r, rm_r, role)
+    report["_meta"] = result.get("_meta", {})
+    return jsonify({"ok": True, **report})
 
 
 if __name__ == "__main__":

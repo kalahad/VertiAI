@@ -12,3 +12,7 @@ dist/
 build/
 .DS_Store
 Thumbs.db
+static/js/skewt.js.orig
+static/js/skewt_fixed.js
+static/js/patch_badge.py
+static/js/testbig.txt

@@ -140,6 +140,122 @@ function render(d) {
   drawRoleWidget(d);
   drawOperationDashboard(d);
   updateDataBadge(d);
+  // แสดงปุ่ม role report panel ทุกครั้งที่ render ข้อมูลใหม่
+  const rrBar = document.getElementById("role-report-bar");
+  if (rrBar) rrBar.style.display = "";
+  // ถ้า panel เปิดอยู่ — รีเฟรชรายงานอัตโนมัติ
+  const rrPanel = document.getElementById("role-report-panel");
+  if (rrPanel && rrPanel.style.display !== "none") loadRoleReport();
+}
+
+// ============================================================
+// AI Panel — Role Report (Session 10)
+// ============================================================
+
+let _rrpOpen = false;
+
+function toggleRoleReport() {
+  _rrpOpen = !_rrpOpen;
+  const panel  = document.getElementById("role-report-panel");
+  const btn    = document.getElementById("btn-role-report");
+  if (!panel || !btn) return;
+  panel.style.display = _rrpOpen ? "block" : "none";
+  btn.textContent = _rrpOpen ? "รายงานเฉพาะกลุ่ม ▲" : "รายงานเฉพาะกลุ่ม ▼";
+  btn.classList.toggle("open", _rrpOpen);
+  if (_rrpOpen) loadRoleReport();
+}
+
+async function loadRoleReport() {
+  const panel   = document.getElementById("role-report-panel");
+  const loading = document.getElementById("rrp-loading");
+  const content = document.getElementById("rrp-content");
+  if (!panel || !content) return;
+
+  loading.style.display = "block";
+  content.innerHTML = "";
+
+  // ใช้ role ปัจจุบัน (window._VAI_ROLE) หรือ default rainmaking
+  const role = window._VAI_ROLE || "rainmaking";
+  try {
+    const res = await fetch(`/api/role_report?role=${encodeURIComponent(role)}`);
+    const j = await res.json();
+    loading.style.display = "none";
+    if (!j.ok) {
+      content.innerHTML = `<div style="color:var(--bad);font-size:13px;padding:8px">${j.error || "โหลดรายงานไม่ได้"}</div>`;
+      return;
+    }
+    renderRoleReport(j, content);
+  } catch(e) {
+    loading.style.display = "none";
+    content.innerHTML = `<div style="color:var(--bad);font-size:13px;padding:8px">เชื่อมต่อ API ไม่ได้</div>`;
+  }
+}
+
+function renderRoleReport(r, container) {
+  // --- headline ---
+  const levelCls = r.level || "neutral";
+  const iconMap = {
+    go: "✅", caution: "⚠️", nogo: "🚫",
+    good: "✅", warn: "⚠️", bad: "🚫", neutral: "📋",
+  };
+  const icon = iconMap[levelCls] || "📋";
+  let html = `<div class="rrp-headline ${levelCls}">
+    <span class="rrp-headline-icon">${icon}</span>
+    <span>${escHtml(r.headline || "")}</span>
+  </div>`;
+
+  // role label badge
+  if (r.role_label_th) {
+    html += `<div style="font-size:11px;color:var(--text-soft);margin-bottom:10px;font-weight:700">
+      รายงานสำหรับ: ${escHtml(r.role_label_th)}</div>`;
+  }
+
+  // --- sections ---
+  (r.sections || []).forEach(sec => {
+    const items = (sec.items || []).filter(Boolean);
+    if (!items.length) return;
+    html += `<div class="rrp-section">
+      <div class="rrp-section-title">${escHtml(sec.title || "")}</div>
+      <div class="rrp-section-body">
+        ${items.map(i => `<div class="rrp-item"><span>${escHtml(i)}</span></div>`).join("")}
+      </div>
+    </div>`;
+  });
+
+  // --- action items ---
+  const actions = (r.action_items || []).filter(Boolean);
+  if (actions.length) {
+    html += `<div class="rrp-action-list">
+      <h4>สิ่งที่ต้องดำเนินการ</h4>
+      <ul>${actions.map(a => `<li>${escHtml(a)}</li>`).join("")}</ul>
+    </div>`;
+  }
+
+  // --- cautions ---
+  const cautions = (r.cautions || []).filter(Boolean);
+  if (cautions.length) {
+    html += `<div class="rrp-caution-list">
+      <h4>ข้อควรระวัง</h4>
+      <ul>${cautions.map(c => `<li>${escHtml(c)}</li>`).join("")}</ul>
+    </div>`;
+  }
+
+  // --- timestamp ---
+  const ts = r.metadata && r.metadata.timestamp
+    ? new Date(r.metadata.timestamp + "Z").toLocaleTimeString("th-TH")
+    : "";
+  if (ts) {
+    html += `<div style="text-align:right;font-size:10px;color:var(--text-soft);margin-top:8px">
+      อัปเดต ${ts} UTC</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
 // ---------- Skew-T ----------

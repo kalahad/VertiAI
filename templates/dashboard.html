@@ -8,10 +8,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 </head>
-<body>
+<body style="--ctrl-h: 48px">
+  <!-- ═══ TOPBAR — nav + utilities only ═══ -->
   <header class="topbar" id="topbar">
     <div class="brand">
-      <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI Logo" style="width:40px;height:40px;flex:none;border-radius:8px;">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI Logo" style="width:36px;height:36px;flex:none;border-radius:8px;">
       <h1>VertiAI</h1>
       <span class="tag" data-i18n="tagline">วิเคราะห์โครงสร้างบรรยากาศแนวดิ่ง</span>
     </div>
@@ -19,9 +20,19 @@
       <a href="/landing" data-i18n="nav_home">หน้าแรก</a>
       <a href="/" class="active" data-i18n="nav_dashboard">แดชบอร์ด</a>
       <a href="/data" data-i18n="nav_data">ข้อมูล</a>
+      <a href="/compare" data-i18n="nav_compare">ภาพรวม</a>
       <a href="/settings" data-i18n="nav_settings">ตั้งค่า</a>
     </nav>
-    <div class="controls">
+    <div class="spacer"></div>
+    <span class="role-badge" id="role-badge" style="display:none"></span>
+    <span class="data-badge" id="data-badge" style="display:none"></span>
+    <button class="btn ghost" id="btn-lang">EN</button>
+    <button class="btn ghost" id="btn-theme">🌙</button>
+  </header>
+
+  <!-- ═══ CTRL-BAR — station/date/time/region controls + status ═══ -->
+  <div class="ctrl-bar" id="ctrl-bar">
+    <div class="ctrl-bar-inner">
       <label data-i18n="station">สถานี</label>
       <select id="sel-station"></select>
       <label data-i18n="date">วันที่</label>
@@ -41,14 +52,10 @@
         <option value="to_daeng">ป่าพรุโต๊ะแดง</option>
       </select>
       <button class="btn" id="btn-analyze" data-i18n="analyze">วิเคราะห์</button>
+      <div class="ctrl-spacer"></div>
+      <span class="ctrl-status" id="status"></span>
     </div>
-    <div class="spacer"></div>
-    <span class="role-badge" id="role-badge" style="display:none"></span>
-    <span class="data-badge" id="data-badge" style="display:none"></span>
-    <span class="status" id="status"></span>
-    <button class="btn ghost" id="btn-lang">EN</button>
-    <button class="btn ghost" id="btn-theme">🌙</button>
-  </header>
+  </div>
 
   <!-- Quick-nav -->
   <div class="quick-nav" id="quick-nav" style="display:none">
@@ -167,9 +174,10 @@
           target = (fallbackId && document.getElementById(fallbackId)) || target;
           if (!target || target.style.display === 'none') return;
         }
-        var topbarH = (document.getElementById('topbar')    || {offsetHeight:64}).offsetHeight;
+        var topbarH = (document.getElementById('topbar')    || {offsetHeight:56}).offsetHeight;
+        var ctrlH   = (document.getElementById('ctrl-bar')  || {offsetHeight:48}).offsetHeight;
         var qnavH   = (document.getElementById('quick-nav') || {offsetHeight:36}).offsetHeight;
-        var top     = target.getBoundingClientRect().top + window.scrollY - topbarH - qnavH - 8;
+        var top     = target.getBoundingClientRect().top + window.scrollY - topbarH - ctrlH - qnavH - 8;
         window.scrollTo({ top: top, behavior: 'smooth' });
         document.querySelectorAll('.qnav-btn').forEach(function(b){ b.classList.remove('active'); });
         btn.classList.add('active');

@@ -52,16 +52,19 @@ body {
 
 /* ---------- แถบบน (Topbar) ---------- */
 .topbar {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 12px 20px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: nowrap;
+  padding: 0 20px; height: var(--topbar-h);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
   position: sticky; top: 0; z-index: 20;
+  overflow: hidden;   /* ป้องกัน wrap ทุกกรณี */
 }
-.brand { display: flex; align-items: baseline; gap: 8px; }
-.brand h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
-.brand .tag { color: var(--text-soft); font-size: 12px; }
+.brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.brand h1 { font-size: 18px; margin: 0; letter-spacing: .5px; white-space: nowrap; }
+/* ซ่อน tagline เมื่อ viewport แคบกว่า 1400px — จุดที่ 3 */
+.brand .tag { color: var(--text-soft); font-size: 12px; white-space: nowrap; }
+@media (max-width: 1400px) { .brand .tag { display: none; } }
 
 .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .controls label { font-size: 12px; color: var(--text-soft); }
@@ -78,16 +81,35 @@ select, input[type="date"] {
 .btn:hover { filter: brightness(1.08); }
 .btn.ghost {
   background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
-  padding: 7px 11px;
+  padding: 7px 11px; flex-shrink: 0; white-space: nowrap;
 }
-.spacer { flex: 1; }
+.spacer { flex: 1; min-width: 8px; }
+
+/* ---------- Control bar (dashboard-only, below topbar) ---------- */
+.ctrl-bar {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 18;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+}
+.ctrl-bar-inner {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  max-width: 1600px; margin: 0 auto;
+}
+.ctrl-bar label { font-size: 12px; color: var(--text-soft); font-weight: 600; white-space: nowrap; }
+.ctrl-bar select,
+.ctrl-bar input[type="date"] { font-size: 12px; padding: 6px 9px; }
 
 /* ---------- Quick-nav anchor bar ---------- */
 .quick-nav {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 7px 20px; background: var(--panel);
   border-bottom: 1px solid var(--border);
-  font-size: 12px; position: sticky; top: var(--topbar-h); z-index: 19;
+  font-size: 12px; position: sticky;
+  top: calc(var(--topbar-h) + var(--ctrl-h, 0px));
+  z-index: 19;
 }
 .quick-nav-label { color: var(--text-soft); font-weight: 600; margin-right: 4px; }
 .qnav-btn {
@@ -109,6 +131,20 @@ select, input[type="date"] {
   border-radius: 20px;
   padding: 3px 10px;
   white-space: nowrap;
+  /* หดตัวได้เมื่อ topbar แคบ แต่ไม่ตัดก่อนจำเป็น */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+/* ---------- Ctrl-bar status (ย้ายจาก topbar) ---------- */
+.ctrl-spacer { flex: 1; }
+.ctrl-status {
+  font-size: 11px; color: var(--text-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 280px;
+  padding: 2px 0;
 }
 
 /* ---------- โครง Layout (Session 9 — 2×2 + stretch row heights) ---------- */
@@ -269,7 +305,7 @@ select, input[type="date"] {
 /* ============================================================
    Session 5 — Nav, Role badge, KPI focus, Pages (data/settings/landing)
    ============================================================ */
-.nav { display: flex; gap: 4px; margin-left: 4px; }
+.nav { display: flex; gap: 4px; margin-left: 4px; flex-shrink: 0; }
 .nav a {
   text-decoration: none; color: var(--text-soft); font-size: 14px;
   padding: 6px 12px; border-radius: 9px; transition: background .15s, color .15s;
@@ -280,6 +316,7 @@ select, input[type="date"] {
 .role-badge {
   font-size: 12px; font-weight: 600; color: var(--accent);
   background: var(--accent-soft); padding: 4px 10px; border-radius: 999px;
+  white-space: nowrap; flex-shrink: 0;
 }
 
 /* KPI ที่เน้นตามบทบาท */

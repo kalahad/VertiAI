@@ -427,6 +427,37 @@ def api_save_thresholds():
     return jsonify({"ok": True, "region": region, "saved": cleaned})
 
 
+@app.get("/compare")
+def compare_page():
+    """หน้า All-Roles Comparison View — แสดง 7 บทบาทพร้อมกัน"""
+    return render_template("compare.html")
+
+
+@app.get("/api/compare")
+def api_compare():
+    """
+    GET /api/compare
+    เรียก generate_role_report ทั้ง 7 บทบาทพร้อมกันจาก last_upload
+    คืน { ok, reports: [RoleReport x7], _meta }
+    """
+    result = db.get_last_upload()
+    if not result:
+        return _bad("ยังไม่มีข้อมูลที่วิเคราะห์ไว้ — กด วิเคราะห์ ก่อน", code=404)
+
+    indices = result.get("indices") or {}
+    ai_r    = result.get("ai")        or ai.assess_rain_chance(indices)
+    rm_r    = result.get("rainmaking") or ai.assess_rainmaking(indices)
+
+    reports = []
+    for role in ROLE_ORDER:
+        report = interp.generate_role_report(indices, ai_r, rm_r, role)
+        report["label"] = ROLE_LABELS[role]
+        report["focus"] = ROLE_KPI_FOCUS[role]
+        reports.append(report)
+
+    return jsonify({"ok": True, "reports": reports, "_meta": result.get("_meta", {})})
+
+
 @app.get("/api/role_report")
 def api_role_report():
     """

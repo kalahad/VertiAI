@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VertiAI — ภาพรวมทุกบทบาท</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>
+    /* ============================================================
+       Compare Page — All-Roles Comparison View
+       Responsive: 3 col (desktop) / 2 col (tablet) / 1 col (mobile)
+       ============================================================ */
+
+    /* ── Page wrapper ── */
+    .compare-page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      flex: 1;
+    }
+
+    /* ── Page header ── */
+    .compare-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .compare-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+    .compare-subtitle {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin: 4px 0 0;
+    }
+    .compare-meta {
+      font-size: 12px;
+      color: var(--text-soft);
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+    }
+
+    /* ── View toggle ── */
+    .view-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .view-btn {
+      font: inherit; font-size: 13px; font-weight: 600;
+      padding: 7px 16px; border-radius: 9px; cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--panel-2); color: var(--text);
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .view-btn.active {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+
+    /* ── No data state ── */
+    .no-data {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-soft);
+    }
+    .no-data p { font-size: 15px; margin: 8px 0; }
+    .no-data .go-btn {
+      display: inline-block; margin-top: 16px;
+      padding: 10px 24px; border-radius: 10px;
+      background: var(--accent); color: #fff;
+      text-decoration: none; font-weight: 600; font-size: 14px;
+    }
+
+    /* ── Loading spinner ── */
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 60px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============================================================
+       CARD GRID VIEW
+       ============================================================ */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1024px) {
+      .card-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Role Card ── */
+    .role-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .role-card:hover {
+      box-shadow: 0 4px 20px rgba(20,30,50,.12);
+      transform: translateY(-2px);
+    }
+
+    /* ── Card header ── */
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card-role-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .card-role-en {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+    .verdict-badge {
+      flex-shrink: 0;
+      font-size: 12px; font-weight: 700;
+      padding: 4px 10px; border-radius: 20px;
+      white-space: nowrap;
+    }
+    .verdict-badge.good, .verdict-badge.go {
+      background: var(--good-bg); color: var(--good);
+    }
+    .verdict-badge.warn, .verdict-badge.caution {
+      background: var(--warn-bg); color: var(--warn);
+    }
+    .verdict-badge.bad, .verdict-badge.nogo {
+      background: var(--bad-bg); color: var(--bad);
+    }
+    .verdict-badge.neutral {
+      background: var(--panel-2); color: var(--text-soft);
+    }
+
+    /* ── Headline ── */
+    .card-headline {
+      font-size: 12px;
+      color: var(--text-soft);
+      line-height: 1.5;
+      border-left: 3px solid var(--border);
+      padding-left: 10px;
+    }
+    .card-headline.good, .card-headline.go   { border-color: var(--good); }
+    .card-headline.warn, .card-headline.caution { border-color: var(--warn); }
+    .card-headline.bad,  .card-headline.nogo  { border-color: var(--bad); }
+
+    /* ── Key metrics ── */
+    .card-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .metric-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+    .metric-row .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ── Card footer ── */
+    .card-footer {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-action-count {
+      font-size: 11px; color: var(--text-soft);
+    }
+    .card-detail-link {
+      font-size: 12px; font-weight: 600;
+      color: var(--accent); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .card-detail-link:hover { text-decoration: underline; }
+
+    /* ── Overall summary card (full-width) ── */
+    .summary-card {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      border: 1.5px solid var(--accent);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .summary-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin: 0 0 6px;
+    }
+    .summary-content { flex: 1; min-width: 240px; }
+    .summary-text { font-size: 13px; color: var(--text); line-height: 1.7; }
+    .summary-chips {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+    }
+    .summary-chip {
+      font-size: 12px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px;
+    }
+    .summary-chip.good { background: var(--good-bg); color: var(--good); }
+    .summary-chip.warn { background: var(--warn-bg); color: var(--warn); }
+    .summary-chip.bad  { background: var(--bad-bg);  color: var(--bad); }
+
+    /* ============================================================
+       MATRIX VIEW
+       ============================================================ */
+    .matrix-view { display: none; }
+    .matrix-view.active { display: block; }
+    .card-grid-view.hidden { display: none; }
+
+    .matrix-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: var(--panel);
+    }
+    .matrix-table th, .matrix-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .matrix-table thead th {
+      background: var(--panel-2);
+      color: var(--text-soft);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      position: sticky;
+      top: 0;
+    }
+    .matrix-table thead th:first-child { min-width: 160px; }
+    .matrix-table tbody tr:hover td { background: var(--accent-soft); }
+    .matrix-table td:first-child {
+      font-weight: 600; color: var(--text);
+    }
+    .matrix-cell {
+      text-align: center;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 12px; font-weight: 600;
+    }
+    .matrix-cell.good { background: var(--good-bg); color: var(--good); }
+    .matrix-cell.warn { background: var(--warn-bg); color: var(--warn); }
+    .matrix-cell.bad  { background: var(--bad-bg);  color: var(--bad); }
+    .matrix-cell.neutral { background: var(--panel-2); color: var(--text-soft); }
+    .matrix-overall-col { font-weight: 700 !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════ TOPBAR ═══════════════ -->
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI Logo"
+           style="width:40px;height:40px;flex:none;border-radius:8px;">
+      <h1>VertiAI</h1>
+      <span class="tag" data-i18n="nav_compare">ภาพรวม</span>
+    </div>
+    <nav class="nav">
+      <a href="/landing" data-i18n="nav_home">หน้าแรก</a>
+      <a href="/" data-i18n="nav_dashboard">แดชบอร์ด</a>
+      <a href="/data" data-i18n="nav_data">ข้อมูล</a>
+      <a href="/compare" class="active" data-i18n="nav_compare">ภาพรวม</a>
+      <a href="/settings" data-i18n="nav_settings">ตั้งค่า</a>
+    </nav>
+    <div class="spacer"></div>
+    <span class="data-badge" id="data-badge" style="display:none"></span>
+    <button class="btn ghost" id="btn-lang">EN</button>
+    <button class="btn ghost" id="btn-theme">🌙</button>
+  </header>
+
+  <!-- ═══════════════ CONTENT ═══════════════ -->
+  <main class="compare-page">
+
+    <!-- Page header -->
+    <div class="compare-header">
+      <div>
+        <h2 class="compare-title">ภาพรวมทุกบทบาท</h2>
+        <p class="compare-subtitle">วิเคราะห์ข้อมูล Sounding เดียวกันจากมุมมอง 7 กลุ่มผู้ใช้</p>
+      </div>
+      <span class="compare-meta" id="meta-label">กำลังโหลด…</span>
+    </div>
+
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-cards" onclick="setView('cards')">
+        &#9711; Card Grid
+      </button>
+      <button class="view-btn" id="btn-matrix" onclick="setView('matrix')">
+        &#9776; เปรียบเทียบเชิงลึก
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading"><div class="spinner"></div></div>
+
+    <!-- No data -->
+    <div id="no-data" class="no-data" style="display:none">
+      <p style="font-size:32px; margin:0">&#128202;</p>
+      <p>ยังไม่มีข้อมูลที่วิเคราะห์ไว้</p>
+      <p style="font-size:12px">กรุณาไปที่หน้าแดชบอร์ดและกด "วิเคราะห์" ก่อน</p>
+      <a href="/" class="go-btn">ไปหน้าแดชบอร์ด</a>
+    </div>
+
+    <!-- ── CARD GRID VIEW ── -->
+    <div id="card-grid-view" class="card-grid-view" style="display:none">
+      <div class="card-grid" id="card-grid"></div>
+    </div>
+
+    <!-- ── MATRIX VIEW ── -->
+    <div id="matrix-view" class="matrix-view">
+      <div class="matrix-table-wrap">
+        <table class="matrix-table" id="matrix-table">
+          <thead>
+            <tr>
+              <th>บทบาท</th>
+              <th>CAPE</th>
+              <th>PWAT</th>
+              <th>K-Index</th>
+              <th>Wind Shear</th>
+              <th>โครงสร้างเมฆ</th>
+              <th class="matrix-overall-col">Overall</th>
+            </tr>
+          </thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="vai-footer">
+    <div class="vai-footer-inner">
+      <div class="vai-footer-brand">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="VertiAI" style="width:32px;height:32px;">
+        <div>
+          <span class="vai-footer-title">VertiAI v1.00</span>
+          <span class="vai-footer-sub">Vertical Atmospheric Intelligence</span>
+        </div>
+      </div>
+      <div class="vai-footer-info">
+        <span>ผศ.ดร.กุลวลัญช์ วรุณสิน</span>
+        <span class="vai-footer-sep">·</span>
+        <span>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยรามคำแหง</span>
+        <span class="vai-footer-sep">·</span>
+        <span>© 2026</span>
+      </div>
+      <div class="vai-footer-links">
+        <span style="font-size:11px;color:var(--text-soft)">ข้อมูล: Wyoming Archive · TMD</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script>
+    // ─────────────────────────────────────────
+    // Boot i18n + theme (ใช้ VAI ร่วมกับทุกหน้า)
+    // ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      await window.VAI.boot();
+      document.getElementById('btn-lang').addEventListener('click', () => window.VAI.toggleLang());
+      document.getElementById('btn-theme').addEventListener('click', () => window.VAI.toggleTheme());
+    });
+
+    // ─────────────────────────────────────────
+    // View switcher
+    // ─────────────────────────────────────────
+    function setView(v) {
+      document.getElementById('btn-cards').classList.toggle('active', v === 'cards');
+      document.getElementById('btn-matrix').classList.toggle('active', v === 'matrix');
+      const cardView   = document.getElementById('card-grid-view');
+      const matrixView = document.getElementById('matrix-view');
+      if (v === 'cards') {
+        cardView.style.display = 'block';
+        matrixView.classList.remove('active');
+      } else {
+        cardView.style.display = 'none';
+        matrixView.classList.add('active');
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // Level → label / class helpers
+    // ─────────────────────────────────────────
+    function levelClass(lvl) {
+      if (!lvl) return 'neutral';
+      if (['go',   'good'].includes(lvl)) return 'good';
+      if (['caution','warn'].includes(lvl)) return 'warn';
+      if (['nogo', 'bad'].includes(lvl))  return 'bad';
+      return 'neutral';
+    }
+    function verdictLabel(lvl) {
+      const map = {
+        go:      'ปฏิบัติการได้',
+        good:    'เอื้ออำนวย',
+        caution: 'ระวัง',
+        warn:    'ระวัง',
+        nogo:    'ไม่แนะนำ',
+        bad:     'ไม่เหมาะสม',
+        neutral: 'เป็นกลาง',
+      };
+      return map[lvl] || lvl || '—';
+    }
+
+    // ─────────────────────────────────────────
+    // Extract 2–3 key metric lines from sections
+    // ─────────────────────────────────────────
+    function extractMetrics(report) {
+      const out = [];
+      for (const sec of (report.sections || [])) {
+        for (const item of (sec.items || [])) {
+          if (out.length >= 3) break;
+          // เลือกเฉพาะบรรทัดที่มีค่าตัวเลข หรือสั้นพอ
+          if (item && item.length < 80) out.push(item);
+        }
+        if (out.length >= 3) break;
+      }
+      return out;
+    }
+
+    // ─────────────────────────────────────────
+    // Build Overall Summary Card
+    // ─────────────────────────────────────────
+    function buildSummaryCard(reports) {
+      const good = reports.filter(r => ['go','good'].includes(r.level));
+      const warn = reports.filter(r => ['caution','warn'].includes(r.level));
+      const bad  = reports.filter(r => ['nogo','bad'].includes(r.level));
+      const neutral = reports.filter(r => !['go','good','caution','warn','nogo','bad'].includes(r.level));
+
+      let summaryText = '';
+      if (good.length)    summaryText += `ข้อมูล Sounding นี้ <strong>เอื้ออำนวย</strong>สำหรับ ${good.map(r => r.role_label_th).join(', ')}. `;
+      if (warn.length)    summaryText += `ควร<strong>ระมัดระวัง</strong>สำหรับ ${warn.map(r => r.role_label_th).join(', ')}. `;
+      if (bad.length)     summaryText += `<strong>ไม่แนะนำ</strong>สำหรับ ${bad.map(r => r.role_label_th).join(', ')}.`;
+      if (neutral.length && !good.length && !warn.length && !bad.length)
+        summaryText = 'ยังไม่สามารถสรุปภาพรวมได้ — กรุณาตรวจสอบข้อมูลแต่ละบทบาท';
+
+      const chips = [
+        ...good.map(r => `<span class="summary-chip good">${r.role_label_th}</span>`),
+        ...warn.map(r => `<span class="summary-chip warn">${r.role_label_th}</span>`),
+        ...bad.map(r  => `<span class="summary-chip bad">${r.role_label_th}</span>`),
+      ].join('');
+
+      return `
+        <div class="summary-card">
+          <div class="summary-content">
+            <p class="summary-title">&#9660; สรุปภาพรวมทุกบทบาท</p>
+            <p class="summary-text">${summaryText}</p>
+            <div class="summary-chips">${chips}</div>
+          </div>
+        </div>`;
+    }
+
+    // ─────────────────────────────────────────
+    // Build Matrix row helpers
+    // ─────────────────────────────────────────
+    function indexLevel(indices, key, goodThr, warnThr, higherIsBetter = true) {
+      const v = indices && indices[key];
+      if (v == null) return 'neutral';
+      if (higherIsBetter) {
+        return v >= goodThr ? 'good' : v >= warnThr ? 'warn' : 'bad';
+      } else {
+        return v <= goodThr ? 'good' : v <= warnThr ? 'warn' : 'bad';
+      }
+    }
+    function cell(lvl, text) {
+      return `<td><span class="matrix-cell ${lvl}">${text}</span></td>`;
+    }
+
+    // ─────────────────────────────────────────
+    // Build Matrix Table
+    // ─────────────────────────────────────────
+    function buildMatrix(reports, indices) {
+      const body = document.getElementById('matrix-body');
+      body.innerHTML = '';
+      for (const r of reports) {
+        const capeLvl  = indexLevel(indices, 'CAPE',   1000, 500);
+        const pwatLvl  = indexLevel(indices, 'PWAT',   40,   25);
+        const kiLvl    = indexLevel(indices, 'K_INDEX', 35,   25);
+        const shearLvl = indexLevel(indices, 'SHEAR_SFC6KM_KT', 20, 40, false); // lower shear is better for most
+        const cloudLvl = (indices && indices['LCL_p'] && indices['EL_p']) ? 'good' : 'neutral';
+        const ovLvl    = levelClass(r.level);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${r.role_label_th}<br><small style="color:var(--text-soft);font-size:10px">${(r.label && r.label.en) || ''}</small></td>
+          ${cell(capeLvl,  indices && indices['CAPE']    != null ? `${indices['CAPE']|0} J/kg` : '—')}
+          ${cell(pwatLvl,  indices && indices['PWAT']    != null ? `${indices['PWAT']|0} mm`   : '—')}
+          ${cell(kiLvl,    indices && indices['K_INDEX'] != null ? `${indices['K_INDEX'].toFixed(1)}` : '—')}
+          ${cell(shearLvl, indices && indices['SHEAR_SFC6KM_KT'] != null ? `${indices['SHEAR_SFC6KM_KT']|0} kt` : '—')}
+          ${cell(cloudLvl, (indices && indices['LCL_p']) ? `${indices['LCL_p']|0}–${(indices['EL_p']||0)|0} hPa` : '—')}
+          <td class="matrix-overall-col"><span class="matrix-cell ${ovLvl}">${verdictLabel(r.level)}</span></td>
+        `;
+        body.appendChild(row);
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // Fetch & render
+    // ─────────────────────────────────────────
+    let _indices = null;
+
+    async function loadCompare() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('no-data').style.display = 'none';
+      document.getElementById('card-grid-view').style.display = 'none';
+
+      let data;
+      try {
+        const res = await fetch('/api/compare');
+        data = await res.json();
+      } catch (e) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('no-data').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'none';
+
+      if (!data.ok || !data.reports) {
+        document.getElementById('no-data').style.display = 'block';
+        return;
+      }
+
+      const reports = data.reports;
+      const meta    = data._meta || {};
+
+      // Update meta label
+      const metaLabel = document.getElementById('meta-label');
+      if (meta.station && meta.date) {
+        metaLabel.textContent = `สถานี ${meta.station} | ${meta.date} ${meta.hour != null ? meta.hour+'Z' : ''}`;
+        document.getElementById('data-badge').style.display = 'inline';
+        document.getElementById('data-badge').textContent = `สถานี ${meta.station}`;
+      } else {
+        metaLabel.textContent = 'ข้อมูลล่าสุดจากฐานข้อมูล';
+      }
+
+      // ── ดึง indices จาก report แรก (ใช้ร่วมกัน)
+      // เรียก last_upload อีกรอบเพื่อได้ indices จริง
+      let indices = null;
+      try {
+        const r2 = await fetch('/api/last_upload');
+        const d2 = await r2.json();
+        if (d2.ok) indices = d2.indices || null;
+      } catch (e) { /* skip */ }
+      _indices = indices;
+
+      // ── BUILD CARDS ──
+      const grid = document.getElementById('card-grid');
+      grid.innerHTML = '';
+
+      for (const r of reports) {
+        const lvlClass = levelClass(r.level);
+        const metrics  = extractMetrics(r);
+        const metricsHtml = metrics.map(m =>
+          `<div class="metric-row"><span class="dot"></span><span>${m}</span></div>`
+        ).join('');
+
+        const card = document.createElement('div');
+        card.className = 'role-card';
+        card.innerHTML = `
+          <div class="card-head">
+            <div>
+              <div class="card-role-name">${r.role_label_th}</div>
+              <div class="card-role-en">${(r.label && r.label.en) || ''}</div>
+            </div>
+            <span class="verdict-badge ${lvlClass}">${verdictLabel(r.level)}</span>
+          </div>
+          <div class="card-headline ${lvlClass}">${r.headline || '—'}</div>
+          <div class="card-metrics">${metricsHtml || '<div class="metric-row"><span class="dot"></span><span>ไม่มีข้อมูลเพิ่มเติม</span></div>'}</div>
+          <div class="card-footer">
+            <span class="card-action-count">${(r.action_items || []).length} รายการแนะนำ · ${(r.cautions || []).length} ข้อระวัง</span>
+            <a href="/?role=${r.role}" class="card-detail-link">รายละเอียด &#8594;</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+
+      // Summary card
+      grid.insertAdjacentHTML('beforeend', buildSummaryCard(reports));
+
+      // ── BUILD MATRIX ──
+      buildMatrix(reports, indices);
+
+      // Show
+      document.getElementById('card-grid-view').style.display = 'block';
+    }
+
+    // ─────────────────────────────────────────
+    // Init
+    // ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', loadCompare);
+  </script>
+</body>
+</html>

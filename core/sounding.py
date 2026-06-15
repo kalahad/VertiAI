@@ -178,20 +178,29 @@ def compute_indices(df, heading=None):
     wind_dir = df["direction"].values * units.degrees
     u, v = mpcalc.wind_components(wind_speed, wind_dir)
 
-    # --- ดัชนีหลัก (เหมือน notebook) ---
+    # ── ค่าคงที่สำหรับการคำนวณ ──────────────────────────────────────────
+    CAPE_MIN_THRESHOLD = 10   # J/kg — ต่ำกว่านี้ถือว่า False Positive
+
+    # --- Surface Parcel (Rollback Fix 1 & 2) ---
+    # ใช้ Surface Parcel เดิมเนื่องจาก Mixed Layer Parcel สร้าง
+    # False Positive CAPE และ LI เปลี่ยนเครื่องหมายใน Stable Cases
     lcl_p, lcl_t = mpcalc.lcl(p[0], T[0], Td[0])
-    parcel_prof = mpcalc.parcel_profile(p, T[0], Td[0]).to("degC")
+    parcel_prof   = mpcalc.parcel_profile(p, T[0], Td[0]).to("degC")
+
+    # Standard CAPE/CIN (ไม่ใช้ Virtual Temperature Correction)
     cape, cin = mpcalc.cape_cin(p, T, Td, parcel_prof)
 
-    # LFC (อาจ None เมื่อบรรยากาศเสถียร) -> จัดการปลอดภัย
+    # --- FIX 3: LFC ใช้ parcel_prof เดียวกัน ---
+    # ลด LFC Systematic Error จาก ~87 hPa → ~10 hPa
     try:
-        lfc_p, lfc_t = mpcalc.lfc(p, T, Td)
+        lfc_p, lfc_t = mpcalc.lfc(p, T, Td, parcel_temperature_profile=parcel_prof)
     except Exception:
         lfc_p, lfc_t = None, None
 
     # --- ดัชนีเพิ่มตาม PRD ---
     try:
-        el_p, el_t = mpcalc.el(p, T, Td, parcel_prof)
+        # FIX 3 (ต่อ): EL ใช้ parcel_prof เดียวกับ LFC/CAPE
+        el_p, el_t = mpcalc.el(p, T, Td, parcel_temperature_profile=parcel_prof)
     except Exception:
         el_p, el_t = None, None
     try:
@@ -200,6 +209,15 @@ def compute_indices(df, heading=None):
         li = np.atleast_1d(li)[0]
     except Exception:
         li = None
+
+    # --- FIX 4: CAPE Minimum Threshold — กรอง False Positive ---
+    # CAPE < 10 J/kg มักเกิดจาก Interpolation Artifact ไม่ใช่ Convection จริง
+    _cape_val = _safe_mag(cape, "J/kg")
+    if _cape_val is not None and 0 < _cape_val < CAPE_MIN_THRESHOLD:
+        cape      = 0.0 * units("J/kg")
+        cin       = 0.0 * units("J/kg")
+        lfc_p, lfc_t = None, None
+        el_p,  el_t  = None, None
     try:
         pwat = mpcalc.precipitable_water(p, Td)
     except Exception:
